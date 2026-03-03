@@ -1,4 +1,16 @@
-# Câmera
+# 1. A partir do código base, desenhe dois cubos na cena usando o mesmo VAO, cada um em uma posição diferente do espaço.
+# 2. Atribua cores diferentes para cada cubo usando o uniform corobjeto.
+# 3. Faça com que um dos cubos gire continuamente em torno de um eixo à sua escolha, usando o tempo entre frames (Tempo_entre_frames) para controlar a rotação.
+# 4. Faça com que o outro cubo permaneça parado, servindo como referência visual para a rotação do primeiro.
+# 5. Implemente um terceiro cubo, também reutilizando o mesmo VAO, posicionado em outro ponto da cena.
+# 6. Faça com que esse terceiro cubo se mova continuamente para frente e para trás ao longo de um eixo (ex.: eixo Z), usando o tempo entre frames para controlar a velocidade.
+# 7. Associe uma tecla do teclado para aumentar e diminuir a escala de todos os cubos simultaneamente.
+# 8. Associe outra tecla para ativar ou desativar a rotação do cubo que gira.
+# 9. Modifique o código para que todos os cubos sejam desenhados dentro de um único loop, usando uma estrutura de dados simples (por exemplo, uma lista de posições).
+# 10. Organize o código de forma que fique claro:
+# 10.1. Onde o modelo geométrico é definido.
+# 10.2. Onde as instâncias (cubos) são posicionadas.
+# 10.3. Onde ocorre a renderização de cada instância.
 
 # Neste exemplo, especificamos uma câmera virtual através da aplicação de transformações de projeção
 import glfw
@@ -49,7 +61,10 @@ def mouse_callback(window, xpos, ypos):
     Cam_pitch = max(-89.0, min(89.0, Cam_pitch))
 
 def key_callback(window, key, scancode, action, mode):
-    return
+    global rodando
+    # R: Para de rotacionar o 2° cubo
+    if key == glfw.KEY_R and action == glfw.PRESS:
+        rodando = not rodando
     
 def inicializaOpenGL():
     global Window, WIDTH, HEIGHT
@@ -328,6 +343,7 @@ def inicializaCamera():
     especificaMatrizProjecao() #perspectiva ou paralela
 
 def trataTeclado():
+    global valor_escala
     """
     Movimenta a câmera no espaço 3D conforme teclas WASD.
     A direção do movimento segue o vetor 'front' (para onde o jogador está olhando),
@@ -358,6 +374,18 @@ def trataTeclado():
         Cam_pos -= direita * velocidade
     if glfw.get_key(Window, glfw.KEY_D) == glfw.PRESS:
         Cam_pos += direita * velocidade
+    
+    velocidade_escala = 1.0
+    # +/-: aumentam e diminuem o tamanho dos cubos
+    if glfw.get_key(Window, glfw.KEY_EQUAL) == glfw.PRESS:
+        valor_escala += velocidade_escala * Tempo_entre_frames
+    if glfw.get_key(Window, glfw.KEY_MINUS) == glfw.PRESS:
+        if valor_escala > 0.1: #<<< tem que limitar se nâo inverte a normal so o valor reduzido for menor q 0 
+            valor_escala -= velocidade_escala * Tempo_entre_frames
+    
+    # R: Para de rotacionar o 2° cubo
+    # Para n dar problema com o tempo de execução a chamada precisa ser feita em def key_callback
+
 
     if glfw.get_key(Window, glfw.KEY_ESCAPE) == glfw.PRESS:
         glfw.set_window_should_close(Window, True)
@@ -371,7 +399,7 @@ def defineCor(r, g, b, a):
     glUniform4fv(coresLoc, 1, cores)
     
 def inicializaRenderizacao():
-    global Window, Shader_programm, Vao_cubo, WIDTH, HEIGHT, Tempo_entre_frames
+    global Window, Shader_programm, Vao_cubo, WIDTH, HEIGHT, Tempo_entre_frames, valor_escala, rodando
 
     tempo_anterior = glfw.get_time()
 
@@ -381,7 +409,11 @@ def inicializaRenderizacao():
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-
+    angulo_atual = 0.0
+    direcao_movimento = 1
+    posicao_z_cubo3 = 0.0
+    valor_escala = 1
+    rodando = True
     
     while not glfw.window_should_close(Window):
         #calcula quantos segundos se passaram entre um frame e outro
@@ -399,19 +431,30 @@ def inicializaRenderizacao():
 
         inicializaCamera()
 
+        # cria cubo 1
         glBindVertexArray(Vao_cubo) #modelo do cubo
-        
-        r = 1
-        g = 0
-        b = 0
-        a = 1
-        Tx = 0
-        Ty = 0
-        Tz = 0
-        S = 1
 
-        defineCor(r,g,b,a)
-        transformacaoGenerica(Tx, Ty, Tz, S, S, S, 0, 0, 0)
+        defineCor(0,0,1,1)
+        transformacaoGenerica(0, 0, 0, valor_escala, valor_escala, valor_escala, 0, 0, 0)
+        glDrawArrays(GL_TRIANGLES, 0, 36)
+
+        # cria cubo 2 e rotaciona ele infinitamente
+        defineCor(1,0,1,1)
+        if rodando:
+            angulo_atual += 50.0 * Tempo_entre_frames
+        transformacaoGenerica(2, 0, 0, valor_escala, valor_escala, valor_escala, 0, angulo_atual, 0)
+        glDrawArrays(GL_TRIANGLES, 0, 36)
+
+        #cria cubo 3
+        defineCor(0.25,1,0,1)
+        deslocamento = 2.0 * Tempo_entre_frames
+        posicao_z_cubo3 += deslocamento * direcao_movimento
+        if posicao_z_cubo3 > 3:
+            direcao_movimento = -1
+        if posicao_z_cubo3 < -3.0:
+            direcao_movimento = 1
+
+        transformacaoGenerica(4, 0, posicao_z_cubo3, valor_escala, valor_escala, valor_escala, 0, 0, 0)
         glDrawArrays(GL_TRIANGLES, 0, 36)
 
         glfw.poll_events()

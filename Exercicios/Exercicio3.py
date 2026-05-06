@@ -289,6 +289,8 @@ def gera_geometria_cilindro(segmentos_radiais, segmentos_altura, raio, altura):
     return np.array(vertices, np.float32), np.array(indices, np.uint32)
 
 
+
+
 # -----------------------------
 # Inicialização das geometrias
 # -----------------------------

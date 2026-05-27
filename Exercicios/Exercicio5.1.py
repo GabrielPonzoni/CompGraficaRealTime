@@ -1,4 +1,6 @@
 # Câmera e Iluminação - Múltiplas Luzes para CG em Tempo Real
+# Para trocar o estado de cada luz, basta pressionar as teclas 1, 2 ou 3 para ligar/desligar as respectivas luzes.
+
 import glfw
 from OpenGL.GL import *
 import OpenGL.GL.shaders
